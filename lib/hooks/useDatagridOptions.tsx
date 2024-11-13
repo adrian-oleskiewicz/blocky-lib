@@ -7,11 +7,12 @@ import {
 	GridValidRowModel,
 } from '@mui/x-data-grid';
 import { GridApiCommunity } from '@mui/x-data-grid/models/api/gridApiCommunity';
-import { useMemo, MutableRefObject } from 'react';
+import { useMemo, useCallback, MutableRefObject } from 'react';
 import { useIsMobile } from './useIsMobile';
 
 interface IProps<T extends GridValidRowModel> {
 	isRowIdx?: boolean;
+  pinnedColumnName?: string;
 	columns: GridColDef<T>[];
 	apiRef: MutableRefObject<GridApiCommunity>;
 }
@@ -20,12 +21,14 @@ export function useDatagridOptions<T extends GridValidRowModel>({
 	apiRef,
 	columns,
 	isRowIdx,
+  pinnedColumnName,
 }: IProps<T>) {
 	const {
 		mobile: { isMobile },
 	} = useIsMobile();
 
-	const onSortModelChange = (
+	// isRowIdx <DataGrid onSortModelChange - keep row order after sorting
+	const onSortModelChange = useCallback((
 		_model: GridSortModel,
 		details: GridCallbackDetails
 	) => {
@@ -33,6 +36,24 @@ export function useDatagridOptions<T extends GridValidRowModel>({
 		sortedRows.forEach((row, idx) => {
 			apiRef.current.updateRows([{ ...row, id: idx }]);
 		});
+	}, []);
+
+	// pinnedColumnName <DataGrid sx - styles for pinned column
+	const pinnedColSx = {
+		'& .pinned-column--header': {
+			position: 'sticky',
+			left: 0,
+			zIndex: 1000,
+			transform: 'translateZ(0)',
+		},
+		'& .pinned-column--cell': {
+			position: 'sticky',
+			left: 0,
+			zIndex: 1000,
+			background: '#fff',
+			transform: 'translateZ(0)',
+			borderRight: isMobile ? '1px solid rgb(224, 224, 224)' : '',
+		},
 	};
 
 	const orderColumn: GridColDef<T>[] = useMemo(
@@ -62,12 +83,28 @@ export function useDatagridOptions<T extends GridValidRowModel>({
 	);
 
 	const columnsWithOptions: GridColDef<T>[] = useMemo(
-		() => [...(isRowIdx ? orderColumn : []), ...columns],
-		[columns, orderColumn, isRowIdx]
+		() => [
+			...(isRowIdx ? orderColumn : []),
+			...(pinnedColumnName
+				? columns.map((col) =>
+						col.field === pinnedColumnName
+							? {
+									...col,
+									headerClassName: isMobile
+										? 'home-page-table-header pinned-column--header'
+										: 'home-page-table-header',
+									cellClassName: isMobile ? 'pinned-column--cell' : '',
+								}
+							: col
+					)
+				: columns),
+		],
+		[columns, orderColumn, isRowIdx, pinnedColumnName, isMobile]
 	);
 
 	return {
 		columnsWithOptions,
 		onSortModelChange,
+    pinnedColSx
 	};
 }
