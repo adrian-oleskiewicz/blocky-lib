@@ -49,7 +49,7 @@ export function useDatagridOptions<T extends GridValidRowModel>({
 	const handleRowOrder = useCallback(
 		(cols: GridColDef<T>[]) => {
 			return isMobile
-				? []
+				? cols
 				: [
 						{
 							field: 'id',
