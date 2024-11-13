@@ -5,7 +5,7 @@ const breakpoints = {
 };
 
 export function useIsMobile() {
-	  const matchesMobile = useMediaQuery(breakpoints.mobile);
+	const matchesMobile = useMediaQuery(breakpoints.mobile);
 	return {
 		mobile: {
 			isMobile: matchesMobile,

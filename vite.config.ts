@@ -16,7 +16,7 @@ export default defineConfig({
   build: {
     copyPublicDir: false,
     lib: {
-      entry: resolve(fileURLToPath(new URL('.', import.meta.url)), 'lib/main.ts'),
+      entry: resolve(__dirname, 'lib/main.ts'),
       formats: ['es']
     },
     rollupOptions: {

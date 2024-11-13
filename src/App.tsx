@@ -1,9 +1,7 @@
-import './App.css'
+import './App.css';
 
 function App() {
-  return (
-    <>App</>
-  )
+	return <>for test</>;
 }
 
-export default App
+export default App;
