@@ -17,6 +17,8 @@ interface IProps<T extends GridValidRowModel> {
 	apiRef: MutableRefObject<GridApiCommunity>;
 }
 
+
+
 export function useDatagridOptions<T extends GridValidRowModel>({
 	apiRef,
 	columns,
@@ -26,6 +28,57 @@ export function useDatagridOptions<T extends GridValidRowModel>({
 	const {
 		mobile: { isMobile },
 	} = useIsMobile();
+
+  const handlePinnedColOption = useCallback(
+		(cols: GridColDef<T>[]) =>
+			cols.map((col) =>
+				col.field === pinnedColumnName
+					? {
+							...col,
+							headerClassName: isMobile
+								? 'home-page-table-header pinned-column--header'
+								: 'home-page-table-header',
+							cellClassName: isMobile ? 'pinned-column--cell' : '',
+						}
+					: col
+			),
+		[isMobile, pinnedColumnName]
+	);
+
+  const handleRowOrder = useCallback((cols: GridColDef<T>[]) => { 
+    return isMobile ? [] : [
+      {
+        field: 'id',
+        headerName: '',
+        width: 30,
+        headerClassName: 'home-page-table-header',
+        sortable: false,
+        renderCell: (params: GridRenderCellParams) => (
+          <Typography
+            variant="body1"
+            height="100%"
+            display="flex"
+            alignItems="center"
+          >
+            {params.api.state.sorting.sortedRows.indexOf(params.id) + 1}
+          </Typography>
+        ),
+      },
+      ...cols,
+  ]}, [])
+  
+
+  const handleColumnOptions = (cols: GridColDef<T>[]) => {
+    let preparedColumns = cols
+    if (isRowIdx) {
+      preparedColumns = handleRowOrder(preparedColumns)
+    }
+    if (pinnedColumnName) {
+      preparedColumns = handlePinnedColOption(preparedColumns)
+    }
+
+    return preparedColumns
+  }
 
 	// isRowIdx <DataGrid onSortModelChange - keep row order after sorting
 	const onSortModelChange = useCallback((
@@ -56,50 +109,9 @@ export function useDatagridOptions<T extends GridValidRowModel>({
 		},
 	};
 
-	const orderColumn: GridColDef<T>[] = useMemo(
-		() =>
-			isMobile
-				? []
-				: [
-						{
-							field: 'id',
-							headerName: '',
-							width: 30,
-							headerClassName: 'home-page-table-header',
-							sortable: false,
-							renderCell: (params: GridRenderCellParams) => (
-								<Typography
-									variant="body1"
-									height="100%"
-									display="flex"
-									alignItems="center"
-								>
-									{params.api.state.sorting.sortedRows.indexOf(params.id) + 1}
-								</Typography>
-							),
-						},
-					],
-		[isMobile]
-	);
-
 	const columnsWithOptions: GridColDef<T>[] = useMemo(
-		() => [
-			...(isRowIdx ? orderColumn : []),
-			...(pinnedColumnName
-				? columns.map((col) =>
-						col.field === pinnedColumnName
-							? {
-									...col,
-									headerClassName: isMobile
-										? 'home-page-table-header pinned-column--header'
-										: 'home-page-table-header',
-									cellClassName: isMobile ? 'pinned-column--cell' : '',
-								}
-							: col
-					)
-				: columns),
-		],
-		[columns, orderColumn, isRowIdx, pinnedColumnName, isMobile]
+		() => handleColumnOptions(columns),
+		[columns, handleColumnOptions]
 	);
 
 	return {
